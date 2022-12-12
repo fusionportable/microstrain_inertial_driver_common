@@ -255,6 +255,25 @@ namespace microstrain
 #if MICROSTRAIN_ROS_VERSION == 1
 
 /**
+ * \brief Wrapper for a ROS1 timer type to give it the same overall structure as ROS2
+ */
+class RosTimeType
+{
+ public:
+  uint32_t sec;
+  uint32_t nsec;
+
+  RosTimeType() = default;
+  RosTimeType(uint32_t _sec, uint32_t _nsec) : sec(_sec), nsec(_nsec) {}
+  RosTimeType(const ::ros::Time& rhs) : sec(rhs.sec), nsec(rhs.nsec) {}
+
+  operator ::ros::Time()
+  {
+    return ::ros::Time(sec, nsec);
+  }
+};
+
+/**
  * \brief Wrapper for a ROS1 publisher to make it look similar to a ROS2 publisher
  */
 template<typename MessageType>
@@ -284,7 +303,7 @@ class RosServiceType : public ::ros::ServiceServer
 
 // ROS1 General Types
 using RosNodeType = ::ros::NodeHandle;
-using RosTimeType = ::ros::Time;
+//using RosTimeType = ::ros::Time;
 using RosTimerType = std::shared_ptr<::ros::Timer>;
 using RosRateType = ::ros::Rate;
 using RosHeaderType = ::std_msgs::Header;

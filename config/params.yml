@@ -56,10 +56,14 @@ device_setup : True
 #      true  - Save the settings in the device's non-volatile memory
 save_settings : False
 
-# Controls if the driver uses the device generated timestamp (if available) for timestamping messages
+# Controls if the driver uses the device generated timestamp (if available) for timestamping messages.
+# NOTE: If this and use_ros_time are both set to true, this timestamp will only be used in the TimeReference message.
+#       In order to timestamp all messaghes with the device time, make sure that use_ros_time is false
 #      false - Use PC received time for timestamping
 #      true  - Use device generated timestamp
-use_device_timestamp : False
+use_device_timestamp : True
+
+auto_adjust_device_timestamp : True
 
 # Controls if the driver uses ROS time for timestamping messages. Can be useful when running under simulation.
 # NOTE: This can be used in conjunction with use_device_timestamp in which case, the device timestmap will be used for sensor_msgs/TimeReference messages, and ROS time will be used for all other messages
@@ -94,7 +98,7 @@ raw_file_directory : "/home/your_name"
 # ****************************************************************** 
 # IMU Settings 
 # ****************************************************************** 
-imu_data_rate : 100
+imu_data_rate : 1000
 
 # The speed at which the individual IMU publishers will publish at.
 #      If set to -1, will use imu_data_rate to determine the rate at which to stream and publish
@@ -183,7 +187,7 @@ publish_nmea   : False
 # ****************************************************************** 
 # Kalman Filter Settings (only applicable for devices with a Kalman Filter) 
 # ****************************************************************** 
-filter_data_rate : 10
+filter_data_rate : 1000
 
 # The speed at which the individual Filter publishers will publish at.
 #      If set to -1, will use filter_data_rate to determine the rate at which to stream and publish

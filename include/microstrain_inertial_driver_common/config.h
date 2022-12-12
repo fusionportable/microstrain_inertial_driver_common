@@ -73,6 +73,9 @@ public:
   // Flag for using device timestamp instead of PC received time
   bool use_device_timestamp_;
 
+  // Flag for whether or not we should adjust the device timestamp to look more like a ROS timestamp
+  bool auto_adjust_device_timestamp_;
+
   // Flag for using ROS time instead of PC received time. If this is and use_device_timestamp_ is set, this will be preferred when setting message timestamps
   bool use_ros_time_;
 

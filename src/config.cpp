@@ -56,8 +56,16 @@ bool Config::configure(RosNodeType* node)
 
   // Device
   getParam<bool>(node, "use_device_timestamp", use_device_timestamp_, false);
+  getParam<bool>(node, "auto_adjust_device_timestamp", auto_adjust_device_timestamp_, false);
   getParam<bool>(node, "use_ros_time", use_ros_time_, false);
   getParam<bool>(node, "use_enu_frame", use_enu_frame_, false);
+
+  // If auto adjust device timestamp is true but we aren't using the device timestamp, log a warning
+  if (!use_device_timestamp_ && auto_adjust_device_timestamp_)
+  {
+    MICROSTRAIN_WARN(node_, "Warning: auto_adjust_device_timestamp has no affect if use_device_timestamp is false");
+    auto_adjust_device_timestamp_ = false;
+  }
 
   // If using ENU frame, reflect in the device frame id
   if (use_enu_frame_)

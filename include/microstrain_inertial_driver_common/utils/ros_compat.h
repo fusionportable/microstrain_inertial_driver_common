@@ -254,6 +254,13 @@ namespace microstrain
  */
 #if MICROSTRAIN_ROS_VERSION == 1
 
+// ROS1 General Types
+using RosNodeType = ::ros::NodeHandle;
+using RosTimerType = std::shared_ptr<::ros::Timer>;
+using RosRateType = ::ros::Rate;
+using RosHeaderType = ::std_msgs::Header;
+using RosSubType = std::shared_ptr<::ros::Subscriber>;
+
 /**
  * \brief Wrapper for a ROS1 timer type to give it the same overall structure as ROS2
  */
@@ -300,14 +307,6 @@ class RosServiceType : public ::ros::ServiceServer
 
   explicit RosServiceType(const ::ros::ServiceServer& rhs) : ::ros::ServiceServer(rhs) {}
 };
-
-// ROS1 General Types
-using RosNodeType = ::ros::NodeHandle;
-//using RosTimeType = ::ros::Time;
-using RosTimerType = std::shared_ptr<::ros::Timer>;
-using RosRateType = ::ros::Rate;
-using RosHeaderType = ::std_msgs::Header;
-using RosSubType = std::shared_ptr<::ros::Subscriber>;
 
 // ROS1 Publisher Message Types
 using OdometryMsg = ::nav_msgs::Odometry;
@@ -602,10 +601,36 @@ inline void stopTimer(RosTimerType timer)
 #elif MICROSTRAIN_ROS_VERSION == 2
 // ROS2 Generic Types
 using RosNodeType = ::rclcpp_lifecycle::LifecycleNode;
-using RosTimeType = ::builtin_interfaces::msg::Time;
 using RosTimerType = ::rclcpp::TimerBase::SharedPtr;
 using RosRateType = ::rclcpp::Rate;
 using RosHeaderType = ::std_msgs::msg::Header;
+
+/**
+ * \brief Wrapper for a ROS1 timer type to give it the same overall structure as ROS2
+ */
+class RosTimeType
+{
+ public:
+  uint32_t sec;
+  uint32_t nsec;
+
+  RosTimeType() = default;
+  RosTimeType(uint32_t _sec, uint32_t _nsec) : sec(_sec), nsec(_nsec) {}
+  RosTimeType(const ::rclcpp::Time& rhs) : sec(rhs.seconds()), nsec(rhs.nanoseconds()) {}
+
+  operator ::rclcpp::Time()
+  {
+    return ::rclcpp::Time(sec, nsec);
+  }
+
+  operator ::builtin_interfaces::msg::Time()
+  {
+    ::builtin_interfaces::msg::Time time;
+    time.sec = sec;
+    time.nanosec = nsec;
+    return time;
+  }
+};
 
 /**
  * \brief Wrapper to allow the publisher from ROS2 be compatible with ROS1

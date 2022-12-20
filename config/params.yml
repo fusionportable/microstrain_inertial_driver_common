@@ -63,6 +63,11 @@ save_settings : False
 #      true  - Use device generated timestamp
 use_device_timestamp : True
 
+# Controls if the device timestamp will be auto adjusted to be closer to ROS time when the device does not have a GPS fix.
+# NOTE: This only has any affect if use_device_timestamp is also true
+# NOTE: If the device acquires a GPS fix in the middle of running, you may notice a jump in timestamps when using this option
+#      false - Do not adjust the device timestamp
+#      true  - Adjust the timestamp if we do not have a GPS fix
 auto_adjust_device_timestamp : True
 
 # Controls if the driver uses ROS time for timestamping messages. Can be useful when running under simulation.
@@ -98,7 +103,7 @@ raw_file_directory : "/home/your_name"
 # ****************************************************************** 
 # IMU Settings 
 # ****************************************************************** 
-imu_data_rate : 1000
+imu_data_rate : 100
 
 # The speed at which the individual IMU publishers will publish at.
 #      If set to -1, will use imu_data_rate to determine the rate at which to stream and publish
@@ -187,7 +192,7 @@ publish_nmea   : False
 # ****************************************************************** 
 # Kalman Filter Settings (only applicable for devices with a Kalman Filter) 
 # ****************************************************************** 
-filter_data_rate : 1000
+filter_data_rate : 10
 
 # The speed at which the individual Filter publishers will publish at.
 #      If set to -1, will use filter_data_rate to determine the rate at which to stream and publish

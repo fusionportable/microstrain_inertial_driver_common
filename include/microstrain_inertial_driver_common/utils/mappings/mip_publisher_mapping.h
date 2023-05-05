@@ -25,28 +25,30 @@
 
 namespace microstrain
 {
-
+// NOTE(gogojjh): correct the topic name here
+// GNSS1: at the right side
+// GNSS2: at the left side
 // Topic names
-static constexpr auto IMU_DATA_TOPIC = "imu/data";
-static constexpr auto IMU_MAG_TOPIC = "mag";
+static constexpr auto IMU_DATA_TOPIC = "imu/data_raw";
+static constexpr auto IMU_MAG_TOPIC = "mag/data_raw";
 static constexpr auto IMU_GPS_CORR_TOPIC = "gps_corr";
 static constexpr auto IMU_OVERRANGE_STATUS_TOPIC = "imu/overrange_status";
 
-static constexpr auto GNSS1_NAVSATFIX_TOPIC = "gnss1/fix";
-static constexpr auto GNSS1_ODOM_TOPIC = "gnss1/odom";
-static constexpr auto GNSS1_TIME_REF_TOPIC = "gnss1/time_ref";
-static constexpr auto GNSS1_FIX_INFO_TOPIC = "gnss1/fix_info";
-static constexpr auto GNSS1_AIDING_STATUS_TOPIC = "gnss1/aiding_status";
-static constexpr auto GNSS1_SBAS_INFO_TOPIC = "gnss1/sbas_info";
-static constexpr auto GNSS1_RF_ERROR_DETECTION_TOPIC = "gnss1/rf_error_detection";
+static constexpr auto GNSS1_NAVSATFIX_TOPIC = "gnss_right/fix";
+static constexpr auto GNSS1_ODOM_TOPIC = "gnss_right/odom";
+static constexpr auto GNSS1_TIME_REF_TOPIC = "gnss_right/time_ref";
+static constexpr auto GNSS1_FIX_INFO_TOPIC = "gnss_right/fix_info";
+static constexpr auto GNSS1_AIDING_STATUS_TOPIC = "gnss_right/aiding_status";
+static constexpr auto GNSS1_SBAS_INFO_TOPIC = "gnss_right/sbas_info";
+static constexpr auto GNSS1_RF_ERROR_DETECTION_TOPIC = "gnss_right/rf_error_detection";
 
-static constexpr auto GNSS2_NAVSATFIX_TOPIC = "gnss2/fix";
-static constexpr auto GNSS2_ODOM_TOPIC = "gnss2/odom";
-static constexpr auto GNSS2_TIME_REF_TOPIC = "gnss2/time_ref";
-static constexpr auto GNSS2_FIX_INFO_TOPIC = "gnss2/fix_info";
-static constexpr auto GNSS2_AIDING_STATUS_TOPIC = "gnss2/aiding_status";
-static constexpr auto GNSS2_SBAS_INFO_TOPIC = "gnss2/sbas_info";
-static constexpr auto GNSS2_RF_ERROR_DETECTION_TOPIC = "gnss2/rf_error_detection";
+static constexpr auto GNSS2_NAVSATFIX_TOPIC = "gnss_left/fix";
+static constexpr auto GNSS2_ODOM_TOPIC = "gnss_left/odom";
+static constexpr auto GNSS2_TIME_REF_TOPIC = "gnss_left/time_ref";
+static constexpr auto GNSS2_FIX_INFO_TOPIC = "gnss_left/fix_info";
+static constexpr auto GNSS2_AIDING_STATUS_TOPIC = "gnss_left/aiding_status";
+static constexpr auto GNSS2_SBAS_INFO_TOPIC = "gnss_left/sbas_info";
+static constexpr auto GNSS2_RF_ERROR_DETECTION_TOPIC = "gnss_left/rf_error_detection";
 
 static constexpr auto RTK_STATUS_TOPIC = "rtk/status";
 static constexpr auto RTK_STATUS_V1_TOPIC = "rtk/status_v1";

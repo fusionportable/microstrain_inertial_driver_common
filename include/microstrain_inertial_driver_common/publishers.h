@@ -320,10 +320,10 @@ private:
 
   /**
    * \brief Updates the header's timestamp to the UTC representation of the GPS timestamp
-   * \param header The time object to set the time on
    * \param timestamp The GPS timestamp to use to update the header
+   * \return ROS representation of the GPS timestamp
    */
-  static void setGpsTime(RosTimeType* time, const mip::data_shared::GpsTimestamp& timestamp);
+  static RosTimeType getGpsTime(const mip::data_shared::GpsTimestamp& timestamp);
 
   // List of MIP dispatch handlers used to subscribe to data from the MIP SDK
   std::vector<std::shared_ptr<mip::C::mip_dispatch_handler>> mip_dispatch_handlers_;
@@ -331,6 +331,10 @@ private:
   // Handles to the ROS node and the config
   RosNodeType* node_;
   Config* config_;
+
+  // Offset calculation to make the device timestamp look more like a ROS timestamp
+  bool calculated_device_timestamp_offset_;
+  int64_t device_timestamp_offset_sec_;
 
   // Mapping between every shared data field and descriptor sets
   std::map<uint8_t, mip::data_shared::EventSource> event_source_mapping_;
@@ -340,6 +344,9 @@ private:
   std::map<uint8_t, mip::data_shared::DeltaTime> delta_time_mapping_;
   std::map<uint8_t, mip::data_shared::ReferenceTimestamp> reference_timestamp_mapping_;
   std::map<uint8_t, mip::data_shared::ReferenceTimeDelta> reference_time_delta_mapping_;
+
+  // Extra map to keep the previous GPS timestamp in if we are auto adjusting timestamps
+  std::map<uint8_t, mip::data_shared::GpsTimestamp> previous_gps_timestamp_mapping_;
 
   // Save the orientation information, as it is used by some other data to transform based on orientation
   tf2::Quaternion filter_attitude_quaternion_ = tf2::Quaternion(0, 0, 0, 1);

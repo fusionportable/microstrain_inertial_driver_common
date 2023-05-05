@@ -13,9 +13,11 @@
 
 # port is the main port that the device will communicate over. For all devices except the GQ7, this is the only available port.
 # aux_port is only available for the GQ7 and is only needed when streaming RTCM corrections to the device from ROS, or if you want to publish NMEA sentences from this node
-port        : "/dev/ttyACM0"
-aux_port    : "/dev/ttyACM1"
-baudrate    : 115200
+aux_port    : "/dev/ttyUSB0"
+port        : "/dev/ttyUSB1"
+# port        : "/dev/ttyACM0"  # main port
+baudrate    : 460800     #
+# baudrate    : 921600     #
 debug       : False
 diagnostics : False
 
@@ -28,12 +30,12 @@ set_baud : False
 #
 # filter_frame_id and filter_child_frame_id are specifically useful as the node will also publish a transform to the /tf topic
 # that contains the transform between these two frames. Many ROS tools such as RViz will use the /tf topic to display things like robot position.
-imu_frame_id          : "sensor"
-gnss1_frame_id        : "gnss1_antenna_wgs84"
-gnss2_frame_id        : "gnss2_antenna_wgs84"
-filter_frame_id       : "sensor_wgs84"
-filter_child_frame_id : "sensor"
-nmea_frame_id         : "nmea"
+imu_frame_id          : "3dm_imu"
+gnss1_frame_id        : "3dm_gnss01_wgs84"
+gnss2_frame_id        : "3dm_gnss00_wgs84"
+filter_frame_id       : "3dm_nav_wgs84"
+filter_child_frame_id : "3dm_nav"
+nmea_frame_id         : "3dm_nmea"
 
 # Waits for a configurable amount of time until the device exists
 # If poll_max_tries is set to -1 we will poll forever until the device exists
@@ -56,16 +58,25 @@ device_setup : True
 #      true  - Save the settings in the device's non-volatile memory
 save_settings : False
 
-# Controls if the driver uses the device generated timestamp (if available) for timestamping messages
+# Controls if the driver uses the device generated timestamp (if available) for timestamping messages.
+# NOTE: If this and use_ros_time are both set to true, this timestamp will only be used in the TimeReference message.
+#       In order to timestamp all messaghes with the device time, make sure that use_ros_time is false
 #      false - Use PC received time for timestamping
 #      true  - Use device generated timestamp
-use_device_timestamp : False
+use_device_timestamp : True
+
+# Controls if the device timestamp will be auto adjusted to be closer to ROS time when the device does not have a GPS fix.
+# NOTE: This only has any affect if use_device_timestamp is also true
+# NOTE: If the device acquires a GPS fix in the middle of running, you may notice a jump in timestamps when using this option
+#      false - Do not adjust the device timestamp
+#      true  - Adjust the timestamp if we do not have a GPS fix
+auto_adjust_device_timestamp : True
 
 # Controls if the driver uses ROS time for timestamping messages. Can be useful when running under simulation.
 # NOTE: This can be used in conjunction with use_device_timestamp in which case, the device timestmap will be used for sensor_msgs/TimeReference messages, and ROS time will be used for all other messages
 #       false - Use PC received time for timestamping
 #       true  - Use ROS time for timestamping all non sensor_msgs/TimeReference messages
-use_ros_time : False
+use_ros_time : True
 
 # Controls if the driver creates a raw binary file
 #      false - Do not create the file
@@ -94,16 +105,16 @@ raw_file_directory : "/home/your_name"
 # ****************************************************************** 
 # IMU Settings 
 # ****************************************************************** 
-imu_data_rate : 100
+imu_data_rate : 400
 
 # The speed at which the individual IMU publishers will publish at.
 #      If set to -1, will use imu_data_rate to determine the rate at which to stream and publish
 #      If set to 0, the stream will be turned off and the publisher will not be created
 imu_raw_data_rate              : -1  # Rate of imu/data topic
 imu_mag_data_rate              : -1  # Rate of mag topic
-imu_gps_corr_data_rate         : -1  # Rate of gps_corr topic
+imu_gps_corr_data_rate         :  0  # Rate of gps_corr topic
                                      # Note that for philo devices (GX5, CV5, CX5), this will be published at the highest IMU data rate if "use_device_timestamp" is set to true
-imu_overrange_status_data_rate : -1  # Rate of imu/overrange_status topic
+imu_overrange_status_data_rate : 0  # Rate of imu/overrange_status topic
 
 # Static IMU message covariance values (the device does not generate these) 
 # Since internally these are std::vector we need to use the rosparam tags 
@@ -124,17 +135,17 @@ gnss1_data_rate : 2
 #            so if more than one is set to stream, and they are set to stream at different rates, messages will be published on both topics, at the higher rate
 gnss1_nav_sat_fix_data_rate        : -1  # Rate of gnss1/fix topic
 gnss1_odom_data_rate               : -1  # Rate of gnss1/odom topic
-gnss1_time_reference_data_rate     : -1  # Rate of gnss1/time_ref topic
+gnss1_time_reference_data_rate     : 0  # Rate of gnss1/time_ref topic
                                          # Note that on philo devices, if use_device_timestamp is set to true, this will be streamed at the highest GNSS rate
 gnss1_fix_info_data_rate           : -1  # Rate of gnss1/fix_info topic
-gnss1_sbas_info_data_rate          : -1  # Rate of gnss1/sbas_info topic
-gnss1_rf_error_detection_data_rate : -1  # Rate of gnss1/rf_error_detection topic
+gnss1_sbas_info_data_rate          : 0 # Rate of gnss1/sbas_info topic
+gnss1_rf_error_detection_data_rate : 0  # Rate of gnss1/rf_error_detection topic
 
 # Antenna #1 lever arm offset vector
 #     For GQ7 - in the vehicle frame wrt IMU origin (meters)
 #     For all other models - in the IMU frame wrt IMU origin (meters)
 #     Note: Make this as accurate as possible for good performance
-gnss1_antenna_offset : [0.0, -0.7, -1.0]
+gnss1_antenna_offset : [1.23, -0.15, 0.22]
 
 # GNSS2 settings are only applicable for multi-GNSS systems (e.g. GQ7) 
 gnss2_data_rate : 2
@@ -147,14 +158,14 @@ gnss2_data_rate : 2
 #            so if more than one is set to stream, and they are set to stream at different rates, messages will be published on both topics, at the higher rate
 gnss2_nav_sat_fix_data_rate        : -1  # Rate of gnss2/fix topic
 gnss2_odom_data_rate               : -1  # Rate of gnss2/odom topic
-gnss2_time_reference_data_rate     : -1  # Rate of gnss2/time_ref topic
+gnss2_time_reference_data_rate     : 0  # Rate of gnss2/time_ref topic
 gnss2_fix_info_data_rate           : -1  # Rate of gnss2/fix_info topic
-gnss2_sbas_info_data_rate          : -1  # Rate of gnss2/sbas_info topic
-gnss2_rf_error_detection_data_rate : -1  # Rate of gnss1/rf_error_detection topic
+gnss2_sbas_info_data_rate          : 0  # Rate of gnss2/sbas_info topic
+gnss2_rf_error_detection_data_rate : 0  # Rate of gnss1/rf_error_detection topic
 
 # Antenna #2 lever arm offset vector (In the vehicle frame wrt IMU origin (meters) )
 # Note: Make this as accurate as possible for good performance 
-gnss2_antenna_offset : [0.0, 0.7, -1.0]
+gnss2_antenna_offset : [1.25, 0.15, 0.22]
 
 # (GQ7 Only) Enable RTK dongle interface
 # Note: Enabling this will cause the node to publish on one of two topics depending
@@ -183,7 +194,7 @@ publish_nmea   : False
 # ****************************************************************** 
 # Kalman Filter Settings (only applicable for devices with a Kalman Filter) 
 # ****************************************************************** 
-filter_data_rate : 10
+filter_data_rate : 30
 
 # The speed at which the individual Filter publishers will publish at.
 #      If set to -1, will use filter_data_rate to determine the rate at which to stream and publish
@@ -192,11 +203,10 @@ filter_data_rate : 10
 #      Note: The parameters' "filter_odom_data_rate", "filter_imu_data_rate", "filter_relative_odom_data_rate" associated ROS messages share several MIP fields,
 #            so if more than one is set to stream, and they are set to stream at different rates, messages will be published on both topics, at the higher rate
 filter_status_data_rate                     : -1  # Rate of nav/status topic
-filter_heading_data_rate                    : -1  # Rate of nav/heading topic
-filter_heading_state_data_rate              : -1  # Rate of nav/heading_state topic
+filter_heading_data_rate                    : 0  # Rate of nav/heading_state topic
 filter_odom_data_rate                       : -1  # Rate of nav/odom topic
-filter_imu_data_rate                        : -1  # Rate of nav/filtered_imu/data
-filter_relative_odom_data_rate              : -1  # Rate of nav/relative_pos topic and the transform between filter_frame_id and filter_child_frame_id
+filter_imu_data_rate                        : 0  # Rate of nav/filtered_imu/data
+filter_relative_odom_data_rate              : 0  # Rate of nav/relative_pos topic and the transform between filter_frame_id and filter_child_frame_id
                                                   # Note that this data rate will also control the rate at which the transform between "filter_frame_id" and "filter_child_frame_id" will be published at
 filter_aiding_status_data_rate              : -1  # Rate of gnss1/aiding_status and gnss2/aiding_status topics
 filter_gnss_dual_antenna_data_rate          : -1  # Rate of nav/dual_antenna_status topic

@@ -58,10 +58,19 @@ device_setup : True
 #      true  - Save the settings in the device's non-volatile memory
 save_settings : False
 
-# Controls if the driver uses the device generated timestamp (if available) for timestamping messages
+# Controls if the driver uses the device generated timestamp (if available) for timestamping messages.
+# NOTE: If this and use_ros_time are both set to true, this timestamp will only be used in the TimeReference message.
+#       In order to timestamp all messaghes with the device time, make sure that use_ros_time is false
 #      false - Use PC received time for timestamping
 #      true  - Use device generated timestamp
-use_device_timestamp : False
+use_device_timestamp : True
+
+# Controls if the device timestamp will be auto adjusted to be closer to ROS time when the device does not have a GPS fix.
+# NOTE: This only has any affect if use_device_timestamp is also true
+# NOTE: If the device acquires a GPS fix in the middle of running, you may notice a jump in timestamps when using this option
+#      false - Do not adjust the device timestamp
+#      true  - Adjust the timestamp if we do not have a GPS fix
+auto_adjust_device_timestamp : True
 
 # Controls if the driver uses ROS time for timestamping messages. Can be useful when running under simulation.
 # NOTE: This can be used in conjunction with use_device_timestamp in which case, the device timestmap will be used for sensor_msgs/TimeReference messages, and ROS time will be used for all other messages

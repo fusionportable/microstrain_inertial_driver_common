@@ -8,6 +8,7 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 
+#include <cstdlib>
 #include <algorithm>
 
 #include "microstrain_inertial_driver_common/publishers.h"
@@ -254,6 +255,10 @@ void Publishers::handleSharedDeltaTicks(const mip::data_shared::DeltaTicks& delt
 
 void Publishers::handleSharedGpsTimestamp(const mip::data_shared::GpsTimestamp& gps_timestamp, const uint8_t descriptor_set, mip::Timestamp timestamp)
 {
+  // save the old timestamp if we are auto adjusting the timestamps
+  if (config_->auto_adjust_device_timestamp_ && gps_timestamp_mapping_.find(descriptor_set) != gps_timestamp_mapping_.end())
+    previous_gps_timestamp_mapping_[descriptor_set] = gps_timestamp_mapping_[descriptor_set];
+
   gps_timestamp_mapping_[descriptor_set] = gps_timestamp;
 }
 
@@ -274,6 +279,10 @@ void Publishers::handleSharedReferenceTimeDelta(const mip::data_shared::Referenc
 
 void Publishers::handleSensorGpsTimestamp(const mip::data_sensor::GpsTimestamp& gps_timestamp, const uint8_t descriptor_set, mip::Timestamp timestamp)
 {
+  // Save the old timestamp if we are auto adjusting the timestamps
+  if (config_->auto_adjust_device_timestamp_ && gps_timestamp_mapping_.find(descriptor_set) != gps_timestamp_mapping_.end())
+    previous_gps_timestamp_mapping_[descriptor_set] = gps_timestamp_mapping_[descriptor_set];
+
   // Convert the old philo timestamp into the new format and store it in the map
   mip::data_shared::GpsTimestamp stored_timestamp;
   stored_timestamp.tow = gps_timestamp.tow;
@@ -372,6 +381,10 @@ void Publishers::handleSensorOverrangeStatus(const mip::data_sensor::OverrangeSt
 
 void Publishers::handleGnssGpsTime(const mip::data_gnss::GpsTime& gps_time, const uint8_t descriptor_set, mip::Timestamp timestamp)
 {
+  // Save the old timestamp if we are auto adjusting the timestamps
+  if (config_->auto_adjust_device_timestamp_ && gps_timestamp_mapping_.find(descriptor_set) != gps_timestamp_mapping_.end())
+    previous_gps_timestamp_mapping_[descriptor_set] = gps_timestamp_mapping_[descriptor_set];
+
   // Convert the old philo timestamp into the new format and store it in the map
   mip::data_shared::GpsTimestamp stored_timestamp;
   stored_timestamp.tow = gps_time.tow;
@@ -394,7 +407,7 @@ void Publishers::handleGnssGpsTime(const mip::data_gnss::GpsTime& gps_time, cons
   }
   auto gps_time_msg = gnss_time_pub_[gnss_index]->getMessageToUpdate();
   gps_time_msg->header.stamp = rosTimeNow(node_);
-  setGpsTime(&gps_time_msg->time_ref, stored_timestamp);
+  gps_time_msg->time_ref = getGpsTime(stored_timestamp);
 }
 
 void Publishers::handleGnssPosLlh(const mip::data_gnss::PosLlh& pos_llh, const uint8_t descriptor_set, mip::Timestamp timestamp)
@@ -571,6 +584,10 @@ void Publishers::handleRtkCorrectionsStatus(const mip::data_gnss::RtkCorrections
 
 void Publishers::handleFilterTimestamp(const mip::data_filter::Timestamp& filter_timestamp, const uint8_t descriptor_set, mip::Timestamp timestamp)
 {
+  // Save the old timestamp if we are auto adjusting the timestamps
+  if (config_->auto_adjust_device_timestamp_ && gps_timestamp_mapping_.find(descriptor_set) != gps_timestamp_mapping_.end())
+    previous_gps_timestamp_mapping_[descriptor_set] = gps_timestamp_mapping_[descriptor_set];
+
   // Convert the old philo timestamp into the new format and store it in the map
   mip::data_shared::GpsTimestamp stored_timestamp;
   stored_timestamp.tow = filter_timestamp.tow;
@@ -946,7 +963,43 @@ void Publishers::updateHeaderTime(RosHeaderType* header, uint8_t descriptor_set,
     if (gps_timestamp_mapping_.find(descriptor_set) != gps_timestamp_mapping_.end())
     {
       // Convert the GPS time to UTC
-      setGpsTime(&header->stamp, gps_timestamp_mapping_[descriptor_set]);
+      const mip::data_shared::GpsTimestamp& gps_timestamp = gps_timestamp_mapping_[descriptor_set];
+      header->stamp = getGpsTime(gps_timestamp);
+
+      // Auto adjust the device timestamp if we were asked to do so
+      if (config_->auto_adjust_device_timestamp_)
+      {
+        // If we have not determined the offset, determine it now
+        if (!calculated_device_timestamp_offset_)
+        {
+          // Only calculate an offset if the difference is greater than a year, otherwise we probably have a GPS fix, so no need to do anything
+          const RosTimeType& device_timestamp_offset = rosTimeNow(node_);
+          if (std::abs(static_cast<int64_t>(device_timestamp_offset.sec - header->stamp.sec)) >= 31536000)
+          {
+            device_timestamp_offset_sec_ = device_timestamp_offset.sec - header->stamp.sec;
+            MICROSTRAIN_DEBUG(node_, "Calculated device timestamp offset as %ld seconds", device_timestamp_offset_sec_);
+          }
+          else
+          {
+            device_timestamp_offset_sec_ = 0;
+            MICROSTRAIN_DEBUG(node_, "It looks like the device has a GPS fix, so no offset is needed");
+          }
+          calculated_device_timestamp_offset_ = true;
+        }
+        // If the difference between this timestamp and the last one is over a year, we probably got a GPS fix, so remove the offset
+        else if (device_timestamp_offset_sec_ != 0 && previous_gps_timestamp_mapping_.find(descriptor_set) != previous_gps_timestamp_mapping_.end())
+        {
+          const RosTimeType& last_stamp = getGpsTime(previous_gps_timestamp_mapping_[descriptor_set]);
+          if (header->stamp.sec - last_stamp.sec >= 31536000)
+          {
+            MICROSTRAIN_INFO(node_, "It looks like the device just got a GPS fix, removing the device time offset. You may notice a jump in timestamps");
+            device_timestamp_offset_sec_ = 0;
+          }
+        }
+
+        // Finally adjust the timestamp
+        header->stamp.sec += device_timestamp_offset_sec_;
+      }
     }
   }
   else if (config_->use_ros_time_)
@@ -955,11 +1008,11 @@ void Publishers::updateHeaderTime(RosHeaderType* header, uint8_t descriptor_set,
   }
   else
   {
-    setRosTime(&header->stamp, timestamp / 1000, (timestamp % 1000) * 1000);
+    header->stamp = RosTimeType(timestamp / 1000, (timestamp % 1000) * 1000);
   }
 }
 
-void Publishers::setGpsTime(RosTimeType* time, const mip::data_shared::GpsTimestamp& timestamp)
+RosTimeType Publishers::getGpsTime(const mip::data_shared::GpsTimestamp& timestamp)
 {
   // Split the seconds and subseconds out to get around the double resolution issue
   double seconds;
@@ -967,7 +1020,7 @@ void Publishers::setGpsTime(RosTimeType* time, const mip::data_shared::GpsTimest
 
   // Seconds since start of Unix time = seconds between 1970 and 1980 + number of weeks since 1980 * number of seconds in a week + number of complete seconds past in current week - leap seconds since start of GPS time
   const uint64_t utc_milliseconds = static_cast<uint64_t>((315964800 + timestamp.week_number * 604800 + static_cast<uint64_t>(seconds) - 18) * 1000L) + static_cast<uint64_t>(std::round(subseconds * 1000.0));
-  setRosTime(time, utc_milliseconds / 1000, (utc_milliseconds % 1000) * 1000);
+  return RosTimeType(utc_milliseconds / 1000, (utc_milliseconds % 1000) * 1000);
 }
 
 }  // namespace microstrain

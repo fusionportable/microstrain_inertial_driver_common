@@ -23,7 +23,7 @@ diagnostics : False
 
 # If set to true, this will configure the requested baudrate on the device.
 # Note that this will be set on both USB and serial, but will only actually affect the baudrate of a serial connection.
-set_baud : False
+set_baud : True
 
 # Frame IDs used in the different messages. By default these are set to arbitrary strings as not to interfere with other ROS services.
 # For more information on common frame IDs, check out: https://www.ros.org/reps/rep-0105.html
@@ -46,7 +46,7 @@ poll_max_tries : 60
 # Controls if the driver outputs data with-respect-to ENU frame
 #      false - position, velocity, and orientation are WRT the NED frame (native device frame)
 #      true  - position, velocity, and orientation are WRT the ENU frame
-use_enu_frame : False
+use_enu_frame : True
 
 # Controls if the driver-defined setup is sent to the device
 #      false - The driver will ignore the settings below and use the device's current settings
@@ -56,21 +56,21 @@ device_setup : True
 # Controls if the driver-defined settings are saved
 #      false - Do not save the settings
 #      true  - Save the settings in the device's non-volatile memory
-save_settings : False
+save_settings : True
 
 # Controls if the driver uses the device generated timestamp (if available) for timestamping messages.
 # NOTE: If this and use_ros_time are both set to true, this timestamp will only be used in the TimeReference message.
 #       In order to timestamp all messaghes with the device time, make sure that use_ros_time is false
 #      false - Use PC received time for timestamping
 #      true  - Use device generated timestamp
-use_device_timestamp : True
+use_device_timestamp : False
 
 # Controls if the device timestamp will be auto adjusted to be closer to ROS time when the device does not have a GPS fix.
 # NOTE: This only has any affect if use_device_timestamp is also true
 # NOTE: If the device acquires a GPS fix in the middle of running, you may notice a jump in timestamps when using this option
 #      false - Do not adjust the device timestamp
 #      true  - Adjust the timestamp if we do not have a GPS fix
-auto_adjust_device_timestamp : True
+auto_adjust_device_timestamp : False
 
 # Controls if the driver uses ROS time for timestamping messages. Can be useful when running under simulation.
 # NOTE: This can be used in conjunction with use_device_timestamp in which case, the device timestmap will be used for sensor_msgs/TimeReference messages, and ROS time will be used for all other messages
@@ -114,12 +114,13 @@ imu_raw_data_rate              : -1  # Rate of imu/data topic
 imu_mag_data_rate              : -1  # Rate of mag topic
 imu_gps_corr_data_rate         :  0  # Rate of gps_corr topic
                                      # Note that for philo devices (GX5, CV5, CX5), this will be published at the highest IMU data rate if "use_device_timestamp" is set to true
-imu_overrange_status_data_rate : 0  # Rate of imu/overrange_status topic
+imu_overrange_status_data_rate : -1  # Rate of imu/overrange_status topic
 
 # Static IMU message covariance values (the device does not generate these) 
 # Since internally these are std::vector we need to use the rosparam tags 
 imu_orientation_cov : [0.01, 0, 0, 0, 0.01, 0, 0, 0, 0.01]
 imu_linear_cov      : [0.01, 0, 0, 0, 0.01, 0, 0, 0, 0.01]
+#imu_linear_cov      : [0, 0, 0, 0, 0, 0, 0, 0, 0]
 imu_angular_cov     : [0.01, 0, 0, 0, 0.01, 0, 0, 0, 0.01]
 
 # ****************************************************************** 
@@ -145,7 +146,8 @@ gnss1_rf_error_detection_data_rate : 0  # Rate of gnss1/rf_error_detection topic
 #     For GQ7 - in the vehicle frame wrt IMU origin (meters)
 #     For all other models - in the IMU frame wrt IMU origin (meters)
 #     Note: Make this as accurate as possible for good performance
-gnss1_antenna_offset : [1.23, -0.15, 0.22]
+gnss1_antenna_offset : [1.22, -0.26, 0.22]
+#gnss1_antenna_offset : [0, 0, 0]
 
 # GNSS2 settings are only applicable for multi-GNSS systems (e.g. GQ7) 
 gnss2_data_rate : 2
@@ -165,8 +167,8 @@ gnss2_rf_error_detection_data_rate : 0  # Rate of gnss1/rf_error_detection topic
 
 # Antenna #2 lever arm offset vector (In the vehicle frame wrt IMU origin (meters) )
 # Note: Make this as accurate as possible for good performance 
-gnss2_antenna_offset : [1.25, 0.15, 0.22]
-
+gnss2_antenna_offset : [1.22, 0.26, 0.22]
+#gnss2_antenna_offset : [0, 0, 0]
 # (GQ7 Only) Enable RTK dongle interface
 # Note: Enabling this will cause the node to publish on one of two topics depending
 #       on the version of the RTK dongle connected to the GQ7
@@ -203,10 +205,10 @@ filter_data_rate : 30
 #      Note: The parameters' "filter_odom_data_rate", "filter_imu_data_rate", "filter_relative_odom_data_rate" associated ROS messages share several MIP fields,
 #            so if more than one is set to stream, and they are set to stream at different rates, messages will be published on both topics, at the higher rate
 filter_status_data_rate                     : -1  # Rate of nav/status topic
-filter_heading_data_rate                    : 0  # Rate of nav/heading_state topic
+filter_heading_data_rate                    : -1  # Rate of nav/heading_state topic
 filter_odom_data_rate                       : -1  # Rate of nav/odom topic
-filter_imu_data_rate                        : 0  # Rate of nav/filtered_imu/data
-filter_relative_odom_data_rate              : 0  # Rate of nav/relative_pos topic and the transform between filter_frame_id and filter_child_frame_id
+filter_imu_data_rate                        : 0   # Rate of nav/filtered_imu/data
+filter_relative_odom_data_rate              : -1   # Rate of nav/relative_pos topic and the transform between filter_frame_id and filter_child_frame_id
                                                   # Note that this data rate will also control the rate at which the transform between "filter_frame_id" and "filter_child_frame_id" will be published at
 filter_aiding_status_data_rate              : -1  # Rate of gnss1/aiding_status and gnss2/aiding_status topics
 filter_gnss_dual_antenna_data_rate          : -1  # Rate of nav/dual_antenna_status topic
@@ -237,14 +239,14 @@ filter_declination        : 0.23
 
 # (All, except GQ7, CV7, -10, and -15 products) Heading Source 0 = None, 1 = magnetic, 2 = GNSS velocity (note: see manual for limitations)  
 # Note: When using a -10/-AR product. This MUST be set to 0 or the node will not start
-filter_heading_source : 1
+filter_heading_source : 2
 
 # (GX5 and previous,-45 models only) Dynamics Mode 1 = Portable (default), 2 = Automotive, 3 = Airborne (<2Gs), 4 = Airborne High G (<4Gs) 
-filter_dynamics_mode : 1
+filter_dynamics_mode : 2
 
 # Controls what kind of linear acceleration data is used in the Filter IMU message.
 #      If this is set to true, the acceleration will not factor out gravity, if set to false gravity will be filtered out of the linear acceleration.
-filter_use_compensated_accel : True
+filter_use_compensated_accel : False
 
 # ZUPT control 
 filter_velocity_zupt_topic : "/moving_vel"
@@ -261,7 +263,7 @@ filter_adaptive_time_limit_ms : 15000
 # (GQ7/CV7 only) Aiding measurement control 
 filter_enable_gnss_pos_vel_aiding     : True
 filter_enable_gnss_heading_aiding     : True
-filter_enable_altimeter_aiding        : False
+filter_enable_altimeter_aiding        : True
 filter_enable_odometer_aiding         : False
 filter_enable_magnetometer_aiding     : False
 filter_enable_external_heading_aiding : False
@@ -281,7 +283,7 @@ filter_external_speed_topic : "/external_speed"
 # Velocity frame control.
 #      If set to false, the velocity will be reported in the NED/ENU frame
 #      If set to true, the velocity will be reported in the vehicle frame
-filter_vel_in_vehicle_frame : True
+filter_vel_in_vehicle_frame : False
 
 # (GQ7 Only) Reference point lever arm offset control.
 #   Note: This offset will affect the position and velocity measurements in the following topics: nav/odom, nav/relative_pos/odom
@@ -372,7 +374,7 @@ gpio4_pin_mode : 0
 #   1 - WGS84 Earth-fixed, earth centered (ECEF) position, velocity, attitude
 #   2 - WGS84 Latitude, Longitude, height above ellipsoid position, NED velocity and attitude
 filter_init_condition_src              : 0
-filter_auto_heading_alignment_selector : 1
+filter_auto_heading_alignment_selector : 3
 filter_init_reference_frame            : 2
 filter_init_position : [0.0, 0.0, 0.0]
 filter_init_velocity : [0.0, 0.0, 0.0]
@@ -385,9 +387,9 @@ filter_init_attitude : [0.0, 0.0, 0.0]
 #
 #   Reference position - Units provided by reference frame (ECEF - meters, LLH - deg, deg, meters)
 #   Note: prior to firmware version 1.0.06 this command will fail for non-positive heights.  1.0.06 fixes this)
-filter_relative_position_config : False
+filter_relative_position_config : True
 filter_relative_position_frame  : 2
-filter_relative_position_ref    : [0, 0, 0.01]
+filter_relative_position_ref    : [0, 0, 0]
 
 # (GQ7 only) Speed Lever Arm Configuration
 #   Lever Arm - In vehicle reference frame (meters)
@@ -420,7 +422,7 @@ filter_pps_source : 1
 
 # (GQ7 only) SBAS options
 sbas_enable: True
-sbas_enable_ranging: False
+sbas_enable_ranging: True 
 sbas_enable_corrections: True
 sbas_apply_integrity: False
 

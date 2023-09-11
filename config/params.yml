@@ -56,7 +56,7 @@ device_setup : True
 # Controls if the driver-defined settings are saved
 #      false - Do not save the settings
 #      true  - Save the settings in the device's non-volatile memory
-save_settings : True
+save_settings : False
 
 # Controls if the driver uses the device generated timestamp (if available) for timestamping messages.
 # NOTE: If this and use_ros_time are both set to true, this timestamp will only be used in the TimeReference message.
@@ -146,7 +146,7 @@ gnss1_rf_error_detection_data_rate : 0  # Rate of gnss1/rf_error_detection topic
 #     For GQ7 - in the vehicle frame wrt IMU origin (meters)
 #     For all other models - in the IMU frame wrt IMU origin (meters)
 #     Note: Make this as accurate as possible for good performance
-gnss1_antenna_offset : [1.22, -0.26, 0.22]
+gnss1_antenna_offset : [0.4, -0.535, -0.02]
 #gnss1_antenna_offset : [0, 0, 0]
 
 # GNSS2 settings are only applicable for multi-GNSS systems (e.g. GQ7) 
@@ -167,7 +167,7 @@ gnss2_rf_error_detection_data_rate : 0  # Rate of gnss1/rf_error_detection topic
 
 # Antenna #2 lever arm offset vector (In the vehicle frame wrt IMU origin (meters) )
 # Note: Make this as accurate as possible for good performance 
-gnss2_antenna_offset : [1.22, 0.26, 0.22]
+gnss2_antenna_offset : [0.4, 0.535, -0.02]
 #gnss2_antenna_offset : [0, 0, 0]
 # (GQ7 Only) Enable RTK dongle interface
 # Note: Enabling this will cause the node to publish on one of two topics depending
